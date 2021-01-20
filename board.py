@@ -1,3 +1,4 @@
+from kivy.core import text
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
@@ -43,7 +44,7 @@ class Board(GridLayout):
 
     def _onclick(self, instance):
         """
-            Handles a click on a tile
+            Handles player move
         """
         if self.trun == 'player':
             if instance.text:
@@ -55,13 +56,82 @@ class Board(GridLayout):
             self._ai_turn()
 
 
+
+
+#---------------ai
     def _ai_turn(self):
         """
             Handles ai's move
         """
         self.trun = 'ai'
         
+        if len(self.getAvailableSpots()) > 1:
+            bestMove = self.minimax(self.trun)
+            self.grid[bestMove['index'][0]][bestMove['index'][1]].text = self.symbols['ai']
+
         self._check_status()
+        self.trun = 'player'
+
+
+    #optimer
+    def getAvailableSpots(self):
+        emptySpots = []
+
+        i = 0
+        for row in range(self.rows):
+            for col in range(self.cols):
+                if self.grid[row][col].text == '':
+                    spot = [row, col]
+                    emptySpots.append(spot)
+        return emptySpots
+
+
+
+    def minimax(self, player):
+        availSpots = self.getAvailableSpots()
+        
+
+        if self._get_winner() != None: 
+            if player == 'player':
+                return {'score': 10}
+            else:
+                return {'score': -10}
+        elif len(availSpots) == 0:
+            return {'score': 0}
+            
+
+        moves = []
+        for emptySpot in availSpots:
+            move = {'index': emptySpot, 'score': 0}
+            if player == 'ai':
+                self.grid[emptySpot[0]][emptySpot[1]].text = self.symbols['ai']
+                result = self.minimax('player')
+                move['score'] = result['score']
+            else:
+                self.grid[emptySpot[0]][emptySpot[1]].text = self.symbols['player']
+                result = self.minimax('ai')
+                move['score'] = result['score']
+            
+
+            emptySpot =  self.grid[move['index'][0]][move['index'][1]].text = ''
+            moves.append(move);
+
+        bestMove = None
+        if player == 'ai':
+            bestScore = -10000
+            for move in moves:
+                if move['score'] > bestScore:
+                    bestScore = move['score']
+                    bestMove = move
+        else:
+            bestScore = 10000
+            for move in moves:
+                if move['score'] < bestScore:
+                    bestScore = move['score']
+                    bestMove = move
+
+        return bestMove
+#-------------ai^^
 
 
 
@@ -85,7 +155,19 @@ class Board(GridLayout):
 
             self._restart_board()
 
+        if len(self.getAvailableSpots()) == 0:
+            close_button = Button(text='Close')
 
+            content = BoxLayout(orientation='vertical')
+            content.add_widget(Label(text='tie!'))
+            content.add_widget(close_button)
+
+            popup = Popup(title='Tie!', content=content, size_hint=(.8, .8))
+            popup.open()
+
+            close_button.bind(on_press = lambda *args: popup.dismiss())
+
+            self._restart_board()
 
     def _get_winner(self):
         """
@@ -119,8 +201,6 @@ class Board(GridLayout):
 
         return None
 
-
-
     def _is_same_symbol(self, row):
         for symbol in SYMBOLS:
             if [symbol for _ in range(self.cols)] == row:
@@ -131,3 +211,7 @@ class Board(GridLayout):
         for row in self.grid:
             for col in row:
                 col.text = ''
+
+
+
+
