@@ -69,7 +69,6 @@ class Board(GridLayout):
         self.trun = 'player'
 
 
-    #optimer
     def getAvailableSpots(self):
         emptySpots = []
 
@@ -78,6 +77,7 @@ class Board(GridLayout):
                 if col.text == '':
                     emptySpots.append(col)
         return emptySpots
+
 
     def minimax(self, player):
         availSpots = self.getAvailableSpots()
