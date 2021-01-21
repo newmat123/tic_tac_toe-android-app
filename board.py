@@ -34,7 +34,7 @@ class Board(GridLayout):
         """
         for row in range(self.rows):
             for col in range(self.cols):
-                tile = Button()
+                tile = Button(font_size=60)
                 tile.bind(on_press=self._onclick)
                 self.grid[row][col] = tile
                 self.add_widget(tile)
@@ -135,12 +135,13 @@ class Board(GridLayout):
             content = BoxLayout(orientation='vertical')
 
             popup = None
-            content.add_widget(close_button)
             if spots == 0:
                 content.add_widget(Label(text='tie!'))
+                content.add_widget(close_button)
                 popup = Popup(title='tie!', content=content, size_hint=(.8, .8))
             elif winner:
                 content.add_widget(Label(text='%s won the game!' % winner))
+                content.add_widget(close_button)
                 popup = Popup(title='%s won!' % winner, content=content, size_hint=(.8, .8))
 
             popup.open()
