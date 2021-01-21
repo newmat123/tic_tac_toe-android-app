@@ -5,9 +5,7 @@ from kivy.uix.button import Button
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 
-
 SYMBOLS = ('X', 'O')
-
 
 class Board(GridLayout):
 
@@ -29,6 +27,7 @@ class Board(GridLayout):
 
         self._draw_tiles()
 
+
     def _draw_tiles(self):
         """
             Adds the tiles to the grid (widgets to the gridset)
@@ -41,7 +40,6 @@ class Board(GridLayout):
                 self.add_widget(tile)
 
 
-
     def _onclick(self, instance):
         """
             Handles player move
@@ -52,10 +50,9 @@ class Board(GridLayout):
 
             instance.text = self.symbols['player']
 
-            self._check_status()
-            self._ai_turn()
+            if self._check_status():
 
-
+                self._ai_turn()
 
 
 #---------------ai
@@ -65,11 +62,10 @@ class Board(GridLayout):
         """
         self.trun = 'ai'
         
-        if len(self.getAvailableSpots()) > 1:
-            bestMove = self.minimax(self.trun)
-            self.grid[bestMove['index'][0]][bestMove['index'][1]].text = self.symbols['ai']
+        bestMove = self.minimax(self.trun)
+        bestMove['index'].text = self.symbols['ai']
 
-        self._check_status()
+        self._check_status(True)
         self.trun = 'player'
 
 
@@ -77,20 +73,15 @@ class Board(GridLayout):
     def getAvailableSpots(self):
         emptySpots = []
 
-        i = 0
-        for row in range(self.rows):
-            for col in range(self.cols):
-                if self.grid[row][col].text == '':
-                    spot = [row, col]
-                    emptySpots.append(spot)
+        for row in self.grid:
+            for col in row:
+                if col.text == '':
+                    emptySpots.append(col)
         return emptySpots
-
-
 
     def minimax(self, player):
         availSpots = self.getAvailableSpots()
         
-
         if self._get_winner() != None: 
             if player == 'player':
                 return {'score': 10}
@@ -98,22 +89,20 @@ class Board(GridLayout):
                 return {'score': -10}
         elif len(availSpots) == 0:
             return {'score': 0}
-            
 
         moves = []
         for emptySpot in availSpots:
             move = {'index': emptySpot, 'score': 0}
             if player == 'ai':
-                self.grid[emptySpot[0]][emptySpot[1]].text = self.symbols['ai']
+                emptySpot.text = self.symbols['ai']
                 result = self.minimax('player')
                 move['score'] = result['score']
             else:
-                self.grid[emptySpot[0]][emptySpot[1]].text = self.symbols['player']
+                emptySpot.text = self.symbols['player']
                 result = self.minimax('ai')
                 move['score'] = result['score']
-            
 
-            emptySpot =  self.grid[move['index'][0]][move['index'][1]].text = ''
+            emptySpot =  move['index'].text = ''
             moves.append(move);
 
         bestMove = None
@@ -134,40 +123,32 @@ class Board(GridLayout):
 #-------------ai^^
 
 
-
-    def _check_status(self):
+    def _check_status(self, ai=False):
         """
             Checks board status
         """
         winner = self._get_winner()
+        spots = len(self.getAvailableSpots())
 
-        if winner:
+        if winner or spots == 0:
             close_button = Button(text='Close')
-
             content = BoxLayout(orientation='vertical')
-            content.add_widget(Label(text='%s won the game!' % winner))
+
+            popup = None
             content.add_widget(close_button)
+            if spots == 0:
+                content.add_widget(Label(text='tie!'))
+                popup = Popup(title='tie!', content=content, size_hint=(.8, .8))
+            elif winner:
+                content.add_widget(Label(text='%s won the game!' % winner))
+                popup = Popup(title='%s won!' % winner, content=content, size_hint=(.8, .8))
 
-            popup = Popup(title='%s won!' % winner, content=content, size_hint=(.8, .8))
             popup.open()
-
             close_button.bind(on_press = lambda *args: popup.dismiss())
-
             self._restart_board()
+        else:
+            return True
 
-        if len(self.getAvailableSpots()) == 0:
-            close_button = Button(text='Close')
-
-            content = BoxLayout(orientation='vertical')
-            content.add_widget(Label(text='tie!'))
-            content.add_widget(close_button)
-
-            popup = Popup(title='Tie!', content=content, size_hint=(.8, .8))
-            popup.open()
-
-            close_button.bind(on_press = lambda *args: popup.dismiss())
-
-            self._restart_board()
 
     def _get_winner(self):
         """
@@ -201,17 +182,15 @@ class Board(GridLayout):
 
         return None
 
+
     def _is_same_symbol(self, row):
         for symbol in SYMBOLS:
             if [symbol for _ in range(self.cols)] == row:
                 return symbol
         return False
 
+
     def _restart_board(self):
         for row in self.grid:
             for col in row:
                 col.text = ''
-
-
-
-
